@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { registerTrackingHandlers } = require('./sockets/trackingHandler');
 
 dotenv.config();
 
@@ -37,6 +38,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
+
+  // Register real-time location tracking handlers
+  registerTrackingHandlers(io, socket);
 });
 
 const PORT = process.env.PORT || 5003;
