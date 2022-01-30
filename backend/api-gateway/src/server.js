@@ -25,6 +25,6 @@ app.use('/api/notifications', createProxyMiddleware({ target: process.env.NOTIFI
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API Gateway is running on port ${PORT}`);
 });

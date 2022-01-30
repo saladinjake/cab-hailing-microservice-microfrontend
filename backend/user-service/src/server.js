@@ -19,6 +19,6 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/user_db';
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('User Service connected to MongoDB');
-    app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));
+    app.listen(PORT, '0.0.0.0', () => console.log(`User Service running on port ${PORT}`));
   })
   .catch((err) => console.error('MongoDB connection error:', err));

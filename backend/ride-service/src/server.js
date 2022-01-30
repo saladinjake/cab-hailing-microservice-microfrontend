@@ -46,6 +46,6 @@ app.get('/health', (req, res) => res.json({ status: 'Ride Service is running' })
 
 const PORT = process.env.PORT || 5002;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ride Service running on port ${PORT}`);
 });
