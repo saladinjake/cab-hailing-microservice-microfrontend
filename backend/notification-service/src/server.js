@@ -45,6 +45,8 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5003;
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`Notification Service running on port ${PORT}`);
+  const { connectConsumer } = require('./events/kafkaClient');
+  await connectConsumer(io);
 });

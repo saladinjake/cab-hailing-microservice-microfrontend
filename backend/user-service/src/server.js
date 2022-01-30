@@ -14,7 +14,7 @@ app.use(express.json());
 app.get('/health', (req, res) => res.json({ status: 'User Service is running' }));
 
 const PORT = process.env.PORT || 5001;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/user_db';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27117/user_db';
 
 mongoose.connect(MONGO_URI)
   .then(() => {

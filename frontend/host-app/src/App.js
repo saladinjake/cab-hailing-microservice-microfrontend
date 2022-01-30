@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 
 const RiderApp = React.lazy(() => import('rider_app/App').catch(() => {
   return { default: () => <div>Failed to load Rider App</div> };
@@ -20,11 +20,11 @@ const App = () => {
         </nav>
         <div style={{ padding: '2rem' }}>
           <Suspense fallback={<div>Loading Micro-Frontend...</div>}>
-            <Switch>
-              <Route path="/rider" component={RiderApp} />
-              <Route path="/driver" component={DriverApp} />
-              <Route path="/" exact render={() => <h3>Select a portal to continue</h3>} />
-            </Switch>
+            <Routes>
+              <Route path="/rider" element={<RiderApp />} />
+              <Route path="/driver" element={<DriverApp />} />
+              <Route path="/" element={<h3>Select a portal to continue</h3>} />
+            </Routes>
           </Suspense>
         </div>
       </div>
