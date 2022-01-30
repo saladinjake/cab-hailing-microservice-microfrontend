@@ -23,7 +23,7 @@ app.use('/api/users', createProxyMiddleware({ target: process.env.USER_SERVICE_U
 app.use('/api/rides', createProxyMiddleware({ target: process.env.RIDE_SERVICE_URL || 'http://localhost:5002', changeOrigin: true }));
 app.use('/api/notifications', createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:5003', changeOrigin: true }));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5201;
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API Gateway is running on port ${PORT}`);
