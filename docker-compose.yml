@@ -44,3 +44,55 @@ services:
     image: redis:6.2-alpine
     ports:
       - "6371:6379"
+
+  user-service:
+    build: ./backend/user-service
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      MONGO_URI: mongodb://user:password@mongodb:27017/user_db?authSource=admin
+    depends_on:
+      - mongodb
+
+  ride-service:
+    build: ./backend/ride-service
+    ports:
+      - "5002:5002"
+    environment:
+      PORT: 5002
+      DB_HOST: postgres-postgis
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: ride_db
+      KAFKA_BROKER: kafka:29092
+    depends_on:
+      - postgres-postgis
+      - kafka
+
+  notification-service:
+    build: ./backend/notification-service
+    ports:
+      - "5003:5003"
+    environment:
+      PORT: 5003
+      KAFKA_BROKER: kafka:29092
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - kafka
+      - redis
+
+  api-gateway:
+    build: ./backend/api-gateway
+    ports:
+      - "5201:5201"
+    environment:
+      PORT: 5201
+      USER_SERVICE_URL: http://user-service:5001
+      RIDE_SERVICE_URL: http://ride-service:5002
+      NOTIFICATION_SERVICE_URL: http://notification-service:5003
+    depends_on:
+      - user-service
+      - ride-service
+      - notification-service
