@@ -13,15 +13,20 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('combined'));
 
-// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'API Gateway is running' });
 });
 
-// Proxy rules
-app.use('/api/users', createProxyMiddleware({ target: process.env.USER_SERVICE_URL || 'http://localhost:5001', changeOrigin: true }));
-app.use('/api/rides', createProxyMiddleware({ target: process.env.RIDE_SERVICE_URL || 'http://localhost:5002', changeOrigin: true }));
-app.use('/api/notifications', createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:5003', changeOrigin: true }));
+const proxy = (target, prefix) =>
+  createProxyMiddleware({
+    target,
+    changeOrigin: true,
+    pathRewrite: { '^': prefix },
+  });
+
+app.use('/api/users', proxy(process.env.USER_SERVICE_URL || 'http://localhost:5001', '/api/users'));
+app.use('/api/rides', proxy(process.env.RIDE_SERVICE_URL || 'http://localhost:5002', '/api/rides'));
+app.use('/api/notifications', proxy(process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:5003', '/api/notifications'));
 
 const PORT = process.env.PORT || 5201;
 
