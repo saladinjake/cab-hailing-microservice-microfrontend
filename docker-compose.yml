@@ -22,6 +22,12 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:29092"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   postgres-postgis:
     image: postgis/postgis:13-3.1
@@ -49,6 +55,7 @@ services:
     build: ./backend/user-service
     ports:
       - "5001:5001"
+    restart: on-failure
     environment:
       PORT: 5001
       MONGO_URI: mongodb://user:password@mongodb:27017/user_db?authSource=admin
@@ -59,6 +66,7 @@ services:
     build: ./backend/ride-service
     ports:
       - "5002:5002"
+    restart: on-failure
     environment:
       PORT: 5002
       DB_HOST: postgres-postgis
@@ -68,25 +76,31 @@ services:
       DB_NAME: ride_db
       KAFKA_BROKER: kafka:29092
     depends_on:
-      - postgres-postgis
-      - kafka
+      postgres-postgis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
 
   notification-service:
     build: ./backend/notification-service
     ports:
       - "5003:5003"
+    restart: on-failure
     environment:
       PORT: 5003
       KAFKA_BROKER: kafka:29092
       REDIS_URL: redis://redis:6379
     depends_on:
-      - kafka
-      - redis
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   api-gateway:
     build: ./backend/api-gateway
     ports:
       - "5201:5201"
+    restart: on-failure
     environment:
       PORT: 5201
       USER_SERVICE_URL: http://user-service:5001
