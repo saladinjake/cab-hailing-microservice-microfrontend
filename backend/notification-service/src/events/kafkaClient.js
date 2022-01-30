@@ -23,7 +23,7 @@ const connectConsumer = async (io) => {
         if (event.type === 'RIDE_REQUESTED') {
           io.emit('newRideRequest', event.payload);
         } else if (event.type === 'RIDE_ACCEPTED' || event.type === 'RIDE_UPDATED') {
-          io.to(event.payload.rideId).emit('rideUpdate', event.payload);
+          io.to(`ride:${event.payload.rideId}`).emit('rideUpdate', event.payload);
         }
       },
     });

@@ -29,11 +29,7 @@ io.on('connection', (socket) => {
     console.log(`User ${userId} joined their notification room`);
   });
 
-  // Ride location updates
-  socket.on('updateLocation', (data) => {
-    const { rideId, location } = data;
-    io.to(rideId).emit('locationUpdate', location);
-  });
+
 
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);

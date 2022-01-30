@@ -1,8 +1,4 @@
-/**
- * trackingHandler.js
- * Registers Socket.io events for real-time location tracking.
- * Riders subscribe to a rideId room; drivers emit location updates.
- */
+
 const registerTrackingHandlers = (io, socket) => {
   // Rider: subscribe to a specific ride's location feed
   socket.on('subscribeToRide', (rideId) => {

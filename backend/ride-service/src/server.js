@@ -18,7 +18,6 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5431,
 });
 
-// Setup PostGIS table
 const setupDatabase = async () => {
   try {
     await pool.query('CREATE EXTENSION IF NOT EXISTS postgis;');
@@ -29,7 +28,7 @@ const setupDatabase = async () => {
         driver_id VARCHAR(255),
         pickup_location geography(POINT) NOT NULL,
         dropoff_location geography(POINT) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending',
+        status VARCHAR(50) DEFAULT 'PENDING',
         fare DECIMAL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -42,10 +41,15 @@ const setupDatabase = async () => {
 
 setupDatabase();
 
+const rideRoutes = require('./routes/rideRoutes');
+app.use('/api/rides', rideRoutes);
+
 app.get('/health', (req, res) => res.json({ status: 'Ride Service is running' }));
 
 const PORT = process.env.PORT || 5002;
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Ride Service running on port ${PORT}`);
+  const { connectProducer } = require('./events/kafkaClient');
+  await connectProducer();
 });
