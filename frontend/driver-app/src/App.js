@@ -18,10 +18,13 @@ const dropoffIcon = new L.Icon({
   iconSize: [25, 41], iconAnchor: [12, 41],
 });
 
+import Auth from './Auth';
+
 const API_BASE = 'http://localhost:5201/api/rides';
 const SOCKET_URL = 'http://localhost:5003';
 
 const DriverApp = () => {
+  const [user, setUser] = useState(() => JSON.parse(sessionStorage.getItem('driverUser')) || null);
   const [status, setStatus] = useState(() => sessionStorage.getItem('driverStatus') || 'Available');
   const [location, setLocation] = useState([5.6000, -0.1900]);
   const [rideRequest, setRideRequest] = useState(() => JSON.parse(sessionStorage.getItem('rideRequest')) || null);
@@ -30,14 +33,16 @@ const DriverApp = () => {
   const socketRef = useRef();
 
   useEffect(() => {
+    if (user) sessionStorage.setItem('driverUser', JSON.stringify(user));
     sessionStorage.setItem('driverStatus', status);
     sessionStorage.setItem('rideRequest', JSON.stringify(rideRequest));
     sessionStorage.setItem('activeRide', JSON.stringify(activeRide));
-  }, [status, rideRequest, activeRide]);
+  }, [user, status, rideRequest, activeRide]);
 
   useEffect(() => {
+    if (!user) return;
     socketRef.current = io(SOCKET_URL, { transports: ['polling', 'websocket'] });
-    socketRef.current.emit('join', 'driver_456');
+    socketRef.current.emit('join', user._id);
 
     socketRef.current.on('newRideRequest', (data) => {
       // Ignore if already on a trip
@@ -46,13 +51,14 @@ const DriverApp = () => {
     });
 
     return () => socketRef.current.disconnect();
-  }, [status]);
+  }, [status, user]);
 
   // Ping location to DB so nearest-driver query finds us
   useEffect(() => {
+    if (!user) return;
     const pingLocation = async (lat, lng) => {
       try {
-        await axios.post(`${API_BASE}/driver/location`, { driverId: 'driver_456', lat, lng });
+        await axios.post(`${API_BASE}/driver/location`, { driverId: user._id, lat, lng });
       } catch (err) {
         // ignore network errors silently
       }
@@ -66,11 +72,11 @@ const DriverApp = () => {
       pingLocation(location[0], location[1]);
     }, 5000);
     return () => clearInterval(interval);
-  }, [location]);
+  }, [location, user]);
 
   // Simulate GPS movement
   useEffect(() => {
-    if (!activeRide?.pickupCoords) return;
+    if (!activeRide?.pickupCoords || !user) return;
     const target = [activeRide.pickupCoords.lat, activeRide.pickupCoords.lng];
     const interval = setInterval(() => {
       setLocation(prev => {
@@ -87,12 +93,12 @@ const DriverApp = () => {
       });
     }, 2000);
     return () => clearInterval(interval);
-  }, [activeRide]);
+  }, [activeRide, user]);
 
   const acceptRide = async () => {
     try {
       const res = await axios.patch(`${API_BASE}/${rideRequest.id}/accept`, {
-        driverId: 'driver_456'
+        driverId: user._id
       });
       setActiveRide(res.data);
       setRideRequest(null);
@@ -116,10 +122,20 @@ const DriverApp = () => {
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.clear();
+    setUser(null);
+    if (socketRef.current) socketRef.current.disconnect();
+  };
+
+  if (!user) {
+    return <Auth role="driver" onLogin={(u) => setUser(u)} />;
+  }
+
   return (
     <div style={{ padding: '1.5rem', fontFamily: 'sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Driver Portal</h2>
+        <h2>🚗 Driver Portal - {user.name}</h2>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {status === 'On Trip' && (
             <button onClick={endTrip} style={{ padding: '0.5rem 1rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -129,6 +145,9 @@ const DriverApp = () => {
           <div style={{ background: status === 'Available' ? '#f6ffed' : '#fff7e6', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid currentColor' }}>
             Status: <strong>{status}</strong>
           </div>
+          <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', background: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Logout
+          </button>
         </div>
       </header>
 

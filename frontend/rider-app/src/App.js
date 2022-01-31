@@ -12,10 +12,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+import Auth from './Auth';
+
 const API_BASE = 'http://localhost:5201/api/rides';
 const SOCKET_URL = 'http://localhost:5003';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
+// ... (keep icon setups and subcomponents identical)
 const dropoffIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -109,6 +112,7 @@ function MapRecenter({ center }) {
 }
 
 const RiderApp = () => {
+  const [user, setUser] = useState(() => JSON.parse(sessionStorage.getItem('riderUser')) || null);
   const [pickup, setPickup] = useState(() => JSON.parse(sessionStorage.getItem('pickup')) || null);
   const [dropoff, setDropoff] = useState(() => JSON.parse(sessionStorage.getItem('dropoff')) || null);
   const [status, setStatus] = useState(() => sessionStorage.getItem('riderStatus') || 'Select pickup and dropoff to begin');
@@ -119,13 +123,15 @@ const RiderApp = () => {
   const mapCenter = pickup ? [pickup.lat, pickup.lng] : [20, 0];
 
   useEffect(() => {
+    if (user) sessionStorage.setItem('riderUser', JSON.stringify(user));
     sessionStorage.setItem('pickup', JSON.stringify(pickup));
     sessionStorage.setItem('dropoff', JSON.stringify(dropoff));
     sessionStorage.setItem('riderStatus', status);
     sessionStorage.setItem('ride', JSON.stringify(ride));
-  }, [pickup, dropoff, status, ride]);
+  }, [user, pickup, dropoff, status, ride]);
 
   useEffect(() => {
+    if (!user) return;
     socketRef.current = io(SOCKET_URL, { transports: ['polling', 'websocket'] });
     
     if (ride?.id) {
@@ -153,14 +159,14 @@ const RiderApp = () => {
     });
 
     return () => socketRef.current.disconnect();
-  }, [ride?.id]);
+  }, [ride?.id, user]);
 
   const requestRide = async () => {
     if (!pickup || !dropoff) { alert('Please select both pickup and dropoff locations.'); return; }
     try {
       setStatus('Requesting...');
       const res = await axios.post(`${API_BASE}/request`, {
-        riderId: 'rider_123',
+        riderId: user._id,
         pickup: { lat: pickup.lat, lng: pickup.lng },
         dropoff: { lat: dropoff.lat, lng: dropoff.lng },
       });
@@ -183,14 +189,29 @@ const RiderApp = () => {
     return mins <= 1 ? 'Arriving now' : `${mins} mins`;
   };
 
+  const handleLogout = () => {
+    sessionStorage.clear();
+    setUser(null);
+    if (socketRef.current) socketRef.current.disconnect();
+  };
+
+  if (!user) {
+    return <Auth role="rider" onLogin={(u) => setUser(u)} />;
+  }
+
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", background: '#f7f8fa', minHeight: '100vh', padding: '0' }}>
       <div style={{ background: '#1a1a2e', color: 'white', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>🚗 Rider Portal</h2>
-        <span style={{
-          background: ride ? '#28a745' : '#ffc107', color: ride ? 'white' : '#333',
-          padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600'
-        }}>{status}</span>
+        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>📱 Rider Portal - {user.name}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{
+            background: ride ? '#28a745' : '#ffc107', color: ride ? 'white' : '#333',
+            padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600'
+          }}>{status}</span>
+          <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', background: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Logout
+          </button>
+        </div>
       </div>
 
       {!ride && (
