@@ -22,10 +22,11 @@ const dropoffIcon = new L.Icon({
   iconSize: [25, 41], iconAnchor: [12, 41],
 });
 
-const driverIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41],
+const driverIcon = new L.DivIcon({
+  className: 'custom-driver-icon',
+  html: "<div style='font-size: 32px; line-height: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);'>🚗</div>",
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
 });
 
 function LocationSearch({ label, onSelect, disabled }) {

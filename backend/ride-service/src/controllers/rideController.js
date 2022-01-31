@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 const requestRide = async (req, res) => {
-  const { riderId, pickup, dropoff } = req.body; // pickup/dropoff = { lat, lng }
+  const { riderId, pickup, dropoff } = req.body;
   try {
     const result = await pool.query(
       `INSERT INTO rides (rider_id, pickup_location, dropoff_location, status) 
@@ -17,7 +17,11 @@ const requestRide = async (req, res) => {
        RETURNING *`,
       [riderId, pickup.lng, pickup.lat, dropoff.lng, dropoff.lat]
     );
-    const ride = result.rows[0];
+    const ride = {
+      ...result.rows[0],
+      pickupCoords: { lat: pickup.lat, lng: pickup.lng },
+      dropoffCoords: { lat: dropoff.lat, lng: dropoff.lng },
+    };
     await sendRideEvent('ride-events', { type: 'RIDE_REQUESTED', payload: ride });
     res.status(201).json(ride);
   } catch (err) {
@@ -36,7 +40,7 @@ const acceptRide = async (req, res) => {
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'Ride not found' });
     const ride = result.rows[0];
-    await sendRideEvent('ride-events', { type: 'RIDE_ACCEPTED', payload: { rideId: id, driverId, ride } });
+    await sendRideEvent('ride-events', { type: 'RIDE_ACCEPTED', payload: { ...ride, rideId: id, driverId } });
     res.json(ride);
   } catch (err) {
     console.error(err);

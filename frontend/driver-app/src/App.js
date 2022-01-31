@@ -37,26 +37,18 @@ const DriverApp = () => {
 
   // Simulate GPS movement when active
   useEffect(() => {
-    let interval;
-    if (activeRide) {
-      interval = setInterval(() => {
-        setLocation(prev => {
-          const target = [activeRide.pickup_location.y, activeRide.pickup_location.x];
-          const newLat = prev[0] + (target[0] - prev[0]) * 0.1;
-          const newLng = prev[1] + (target[1] - prev[1]) * 0.1;
-          const newLoc = [newLat, newLng];
-          
-          socketRef.current.emit('driverLocation', { 
-            rideId: activeRide.id, 
-            lat: newLat, 
-            lng: newLng 
-          });
-          
-          setPath(p => [...p, newLoc]);
-          return newLoc;
-        });
-      }, 2000);
-    }
+    if (!activeRide?.pickupCoords) return;
+    const target = [activeRide.pickupCoords.lat, activeRide.pickupCoords.lng];
+    const interval = setInterval(() => {
+      setLocation(prev => {
+        const newLat = prev[0] + (target[0] - prev[0]) * 0.1;
+        const newLng = prev[1] + (target[1] - prev[1]) * 0.1;
+        const newLoc = [newLat, newLng];
+        socketRef.current.emit('driverLocation', { rideId: activeRide.id, lat: newLat, lng: newLng });
+        setPath(p => [...p, newLoc]);
+        return newLoc;
+      });
+    }, 2000);
     return () => clearInterval(interval);
   }, [activeRide]);
 
@@ -88,9 +80,9 @@ const DriverApp = () => {
         <MapContainer center={location} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={location}><Popup>My Location</Popup></Marker>
-          {activeRide && (
-            <Marker position={[activeRide.pickup_location.y, activeRide.pickup_location.x]}>
-              <Popup>Pickup Rider</Popup>
+          {activeRide?.pickupCoords && (
+            <Marker position={[activeRide.pickupCoords.lat, activeRide.pickupCoords.lng]}>
+              <Popup>📍 Pickup Rider here</Popup>
             </Marker>
           )}
           {path.length > 0 && <Polyline positions={path} color="green" />}
