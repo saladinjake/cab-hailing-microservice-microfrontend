@@ -20,7 +20,7 @@ const connectConsumer = async (io) => {
           console.log(`Kafka event received: ${event.type}`);
           if (event.type === 'RIDE_REQUESTED') {
             io.emit('newRideRequest', event.payload);
-          } else if (event.type === 'RIDE_ACCEPTED' || event.type === 'RIDE_UPDATED') {
+          } else if (event.type === 'RIDE_ACCEPTED' || event.type === 'RIDE_UPDATED' || event.type === 'RIDE_COMPLETED') {
             io.to(`ride:${event.payload.rideId}`).emit('rideUpdate', event.payload);
           }
         },

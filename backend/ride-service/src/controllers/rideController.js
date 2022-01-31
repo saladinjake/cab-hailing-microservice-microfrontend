@@ -48,6 +48,23 @@ const acceptRide = async (req, res) => {
   }
 };
 
+const endTrip = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `UPDATE rides SET status = 'COMPLETED' WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Ride not found' });
+    const ride = result.rows[0];
+    await sendRideEvent('ride-events', { type: 'RIDE_COMPLETED', payload: { rideId: id } });
+    res.json(ride);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to end trip' });
+  }
+};
+
 const getRideStatus = async (req, res) => {
   const { id } = req.params;
   try {
@@ -60,4 +77,4 @@ const getRideStatus = async (req, res) => {
   }
 };
 
-module.exports = { requestRide, acceptRide, getRideStatus };
+module.exports = { requestRide, acceptRide, endTrip, getRideStatus };

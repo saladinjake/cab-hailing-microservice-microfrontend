@@ -32,6 +32,11 @@ const setupDatabase = async () => {
         fare DECIMAL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS active_drivers (
+        driver_id VARCHAR(255) PRIMARY KEY,
+        location geography(POINT) NOT NULL,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     console.log('PostgreSQL and PostGIS setup completed.');
   } catch (err) {

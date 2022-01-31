@@ -109,30 +109,50 @@ function MapRecenter({ center }) {
 }
 
 const RiderApp = () => {
-  const [pickup, setPickup] = useState(null);
-  const [dropoff, setDropoff] = useState(null);
-  const [status, setStatus] = useState('Select pickup and dropoff to begin');
-  const [ride, setRide] = useState(null);
+  const [pickup, setPickup] = useState(() => JSON.parse(sessionStorage.getItem('pickup')) || null);
+  const [dropoff, setDropoff] = useState(() => JSON.parse(sessionStorage.getItem('dropoff')) || null);
+  const [status, setStatus] = useState(() => sessionStorage.getItem('riderStatus') || 'Select pickup and dropoff to begin');
+  const [ride, setRide] = useState(() => JSON.parse(sessionStorage.getItem('ride')) || null);
   const [driverLocation, setDriverLocation] = useState(null);
   const [path, setPath] = useState([]);
   const socketRef = useRef();
   const mapCenter = pickup ? [pickup.lat, pickup.lng] : [20, 0];
 
   useEffect(() => {
+    sessionStorage.setItem('pickup', JSON.stringify(pickup));
+    sessionStorage.setItem('dropoff', JSON.stringify(dropoff));
+    sessionStorage.setItem('riderStatus', status);
+    sessionStorage.setItem('ride', JSON.stringify(ride));
+  }, [pickup, dropoff, status, ride]);
+
+  useEffect(() => {
     socketRef.current = io(SOCKET_URL, { transports: ['polling', 'websocket'] });
+    
+    if (ride?.id) {
+      socketRef.current.emit('subscribeToRide', ride.id);
+    }
+
     socketRef.current.on('rideUpdate', (data) => {
-      setRide(prev => ({ ...prev, ...data }));
-      setStatus(`Ride ${data.status}`);
+      if (data.status === 'COMPLETED') {
+        setStatus('Ride Completed');
+        alert('Your trip has ended!');
+        setRide(null);
+        setPickup(null);
+        setDropoff(null);
+        setDriverLocation(null);
+        setPath([]);
+      } else {
+        setRide(prev => ({ ...prev, ...data }));
+        if (data.status) setStatus(`Ride ${data.status}`);
+      }
     });
+
     socketRef.current.on('locationUpdate', (location) => {
       setDriverLocation(location);
       setPath(prev => [...prev, [location.lat, location.lng]]);
     });
-    return () => socketRef.current.disconnect();
-  }, []);
 
-  useEffect(() => {
-    if (ride?.id) socketRef.current.emit('subscribeToRide', ride.id);
+    return () => socketRef.current.disconnect();
   }, [ride?.id]);
 
   const requestRide = async () => {
@@ -204,8 +224,8 @@ const RiderApp = () => {
         <MapContainer center={mapCenter} zoom={pickup ? 13 : 2} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
           {pickup && <MapRecenter center={[pickup.lat, pickup.lng]} />}
-          {pickup && <Marker position={[pickup.lat, pickup.lng]}><Popup>📍 Pickup: {pickup.name}</Popup></Marker>}
-          {dropoff && <Marker position={[dropoff.lat, dropoff.lng]} icon={dropoffIcon}><Popup>🏁 Dropoff: {dropoff.name}</Popup></Marker>}
+          {pickup && <Marker position={[pickup.lat, pickup.lng]}><Popup>📍 Pickup: {pickup.name || 'Selected Location'}</Popup></Marker>}
+          {dropoff && <Marker position={[dropoff.lat, dropoff.lng]} icon={dropoffIcon}><Popup>🏁 Dropoff: {dropoff.name || 'Selected Location'}</Popup></Marker>}
           {driverLocation && (
             <Marker position={[driverLocation.lat, driverLocation.lng]} icon={driverIcon}>
               <Popup>🚘 Driver — ETA: {calculateETA()}</Popup>
