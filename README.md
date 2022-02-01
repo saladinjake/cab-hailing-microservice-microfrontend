@@ -54,3 +54,22 @@ Then open **http://localhost:3000** and navigate to `/rider` or `/driver`.
 - **Geo Matching**: PostGIS `ST_DWithin` queries match riders to nearest available drivers within 5km.
 - **Surge Pricing**: Dynamic multiplier applied per-request based on demand signal.
 - **Module Federation**: `rider-app` and `driver-app` expose their root `App` component; the `host-app` lazy-loads them at runtime with `React.lazy`.
+
+## Project Status
+
+### ✅ Completed Features
+- [x] **Microservice Orchestration**: Full docker-compose stack with robust healthchecks and Kafka producer/consumer exponential retry loops.
+- [x] **API Gateway Path Rewriting**: Seamless routing of `/api/rides`, `/api/users`, and `/api/notifications` to downstream services without 404 stripping errors.
+- [x] **Global Geocoding Integration**: Integrated **OpenStreetMap Nominatim** in the rider UI to allow real-world address searching instead of static mock locations.
+- [x] **PostGIS Geospatial Matching**: Replaced mocked matching with a real DB-backed driver pool. Uses `ST_DWithin` to dynamically match riders to the nearest live driver within a 5km radius.
+- [x] **Secure JWT Authentication**: Built `bcryptjs` and `jsonwebtoken` auth flows into the `user-service`. Added dynamic `<Auth />` portals forcing users to login/signup before accessing map UI. 
+- [x] **Real-time Map Synching**: The Driver App shows the Rider's exact pickup/dropoff points. The Rider App displays a live moving car marker (🚗) with updating ETAs via Socket.io.
+- [x] **UI State Persistence**: Configured `sessionStorage` in both micro-frontends so that accidental page refreshes do not disrupt an active trip state.
+- [x] **Trip Lifecycle Event Flow**: Added a dedicated "End Trip" endpoint and button for drivers that updates PostgreSQL and emits a `RIDE_COMPLETED` Kafka event to smoothly detach users.
+
+### 🚀 Future TODOs
+- [ ] **Stripe Payments**: Add payment gateway integration to process the calculated fare once `RIDE_COMPLETED` is triggered.
+- [ ] **Driver Earnings Dashboard**: Build a React interface for drivers to track their daily/weekly payouts and trip history.
+- [ ] **In-App Messaging**: Implement a real-time chat modal via Socket.io so the driver and rider can communicate prior to pickup.
+- [ ] **Trip Cancellations**: Add handlers for rider/driver cancellations, returning the driver to the available pool.
+- [ ] **Environment Hardening**: Transition hardcoded credentials and salts in the microservices to a centralized secret manager for production.
