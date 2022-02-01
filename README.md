@@ -76,3 +76,6 @@ Then open **http://localhost:3000** and navigate to `/rider` or `/driver`.
 
 ## Project Overview
 This repository contains the source code for the **Ride Hailing System** project, part of the Days-back collection of modern web applications. It features high-fidelity UI/UX, robust backend architecture, and seamless interactive workflows.
+
+## Technical Deep Dive
+This **advanced** project implementation leverages state-of-the-art patterns for scalability, performance, and maintainability. Key features include complex state synchronization, micro-interaction animations, and an optimized design system built on high-fidelity tokens.
